@@ -72,7 +72,7 @@ It publishes:
 - `/aquabot/turbines` (`geometry_msgs/PoseArray`): metric position of the windturbines
 - The pinger position on `/tf` (`"pinger"` frame)
 
-A configuration file to be used with `robot_localization` is also available.
+A configuration file to be used with `robot_localization` is also available, that can easily consume the topics published by `gps2pose` in order to get the robot estimate on `/tf` and `odom`.
 
 This package is meant *not* to be ready-to-use, a launch file has to be written in order to use the node and EKF according to the available topics.
 
