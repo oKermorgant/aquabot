@@ -77,12 +77,28 @@ class Planner(Node):
     def pub_markers(self):
 
         markers = MarkerArray()
+
+        now = rclpy.time.Time()
+        inspected = None
+
+        if self.buffer.can_transform('world', 'pinger', now):
+            tf = self.buffer.lookup_transform('world', 'pinger', now).transform
+
+            def distTF(turbine):
+                return (turbine.x-tf.translation.x)**2 + (turbine.y-tf.translation.y)**2
+
+            inspected = min(self.turbines, key = distTF)
+
+            if distTF(inspected) > 400:
+                inspected = None
+
         for i,obs in enumerate(self.planner.no_go_zones):
 
             rock = isinstance(obs.x, int)
 
             marker = Marker()
             marker.header.frame_id = 'world'
+            marker.header.stamp = now.to_msg()
             marker.id = i
             marker.type = marker.CYLINDER
             marker.action = marker.ADD
@@ -93,6 +109,9 @@ class Planner(Node):
             marker.pose.position.z = marker.scale.z/2
             marker.color.r = marker.color.g = marker.color.b = 0.2 if rock else 1.
 
+            if inspected is not None and obs.x == inspected.x and obs.y == inspected.y:
+                # second phase, display the relevant turbine
+                marker.color.g = marker.color.b = 0.05
             marker.color.a = 1.
             markers.markers.append(marker)
         self.marker_pub.publish(markers)
