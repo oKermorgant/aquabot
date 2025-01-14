@@ -8,8 +8,10 @@ The code in this repository is adapted for projects and labs and consists in mul
 
 The packages are compatible with the following duos:
 
-- ROS 2 Galactic + Gazebo Fortress
+- ROS 2 Galactic + Ignition Fortress (sea will be white due to a limitation of Ignition Rendering)
 - ROS 2 Humble or Jazzy + Gazebo Garden or Harmonic
+
+Set the `GZ_VERSION` environment variable to the Ignition / Gazebo version you pick.
 
 ### Dependencies
 
@@ -18,6 +20,7 @@ The packages are compatible with the following duos:
   - [`simple_launch`](https://github.com/oKermorgant/simple_launch), available with `apt` on Humble+
 - For the helper packages:
   - `robot_localization`
+  - `nav_msgs`
 
 ## Main simulation
 
@@ -82,4 +85,4 @@ This package contains two nodes to provide some tools for people not interested 
 
 - Control node (`cmd.py`): This node subscribes to `cmd_vel` (`geometry_msgs/Twist`) and `odom` (`nav_msgs/Odometry`). It uses a simple PID to control the thrusters of the boat in order to track the desired twist.
 
-- Planning node (`planner.py`): This node offers a `nav_msgs/GetPlan` service that find a path from two start and goal poses in the world frame. The path is returned through the service but is also published on the `plan` topic for visualization purpose. This node also subscribes to the `goal_pose` topic. In this case it will use the current pose of the boat as the start.
+- Planning node (`planner.py`): This node offers a `nav_msgs/GetPlan` service that find a path from two start and goal poses in the world frame. The path is returned through the service and is also published on the `plan` topic for visualization purpose. This node also subscribes to the `goal_pose` topic. In this case it will use the current pose of the boat as the start, the resulting path will be published on `plan`.
