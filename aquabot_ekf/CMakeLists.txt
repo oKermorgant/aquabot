@@ -19,8 +19,7 @@ include_directories(include)
 ament_auto_add_executable(gps2pose src/gps2pose.cpp)
 target_link_libraries(gps2pose ${GeographicLib_LIBRARIES})
 
-install(DIRECTORY launch params
-        DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY params DESTINATION share/${PROJECT_NAME})
 
 
 ament_auto_package()
