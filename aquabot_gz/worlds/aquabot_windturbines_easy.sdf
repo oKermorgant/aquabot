@@ -5,7 +5,7 @@
 
     <physics name="4ms" type="dart">
       <max_step_size>0.004</max_step_size>
-      <real_time_factor>0.0</real_time_factor>
+      <real_time_factor>1.0</real_time_factor>
       <real_time_update_rate>0.0</real_time_update_rate>
     </physics>
 
@@ -263,7 +263,7 @@
       <running_state_duration>12000</running_state_duration>
       <release_topic>/vrx/release</release_topic>
       <pinger_position>-85.810648 -6.200278 0</pinger_position>
-      <phase_search_max_time>6000</phase_search_max_time>
+      <phase_search_max_time>20000</phase_search_max_time>
       <phase_rally_period_publish>20.0</phase_rally_period_publish>
       <phase_rally_min_distance>15.0</phase_rally_min_distance>
       <phase_turnaround_number_turns>-1.0</phase_turnaround_number_turns>
