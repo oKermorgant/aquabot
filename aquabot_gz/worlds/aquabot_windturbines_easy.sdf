@@ -88,10 +88,10 @@
 
     <!-- Aquabot regatta world from model file -->
     <include>
-      <name>aquabot_regatta_no_obstacles_world</name>
+      <name>aquabot_regatta_world</name>
       <pose>0 0 0 0 0 0</pose>
-      <uri>aquabot_regatta_no_obstacles_world</uri>
-    </include>    
+      <uri>aquabot_regatta_world</uri>
+    </include>
     
     <!-- Load the plugin for the wind --> 
     <plugin
@@ -154,7 +154,7 @@
     <generation_seed>AHj1VjJI7VlnxRnv</generation_seed>
     <include>
       <name>aquabot_windturbine_main_0_OK</name>
-      <pose>95.701374 78.430600 0 0 0 0.450100</pose>
+      <pose>65 50 0 0 0 0.450100</pose>
       <uri>aquabot_windturbine_main</uri>
     </include>
     <actor name="aquabot_windturbine_rotor_0_OK">
@@ -168,22 +168,22 @@
         <trajectory id="0" type="square">
           <waypoint>
             <time>0.000000</time>
-            <pose>95.701374 78.430600 30.0 0.0000 0 0.450100</pose>
+            <pose>65 50 30.0 0.0000 0 0.450100</pose>
           </waypoint>
           <waypoint>
             <time>15.000000</time>
-            <pose>95.701374 78.430600 30.0 -3.1415 0 0.450100</pose>
+            <pose>65 50 30.0 -3.1415 0 0.450100</pose>
           </waypoint>
           <waypoint>
             <time>30.000000</time>
-            <pose>95.701374 78.430600 30.0 -6.2830 0 0.450100</pose>
+            <pose>65 50 30.0 -6.2830 0 0.450100</pose>
           </waypoint>
         </trajectory>
       </script>
     </actor>
     <include>
       <name>aquabot_marker_0_OK_0</name>
-      <pose>95.701374 78.430600 0 0 0 6.277234</pose>
+      <pose>65 50 0 0 0 6.277234</pose>
       <uri>aquabot_marker_0_OK</uri>
     </include>
     <include>
