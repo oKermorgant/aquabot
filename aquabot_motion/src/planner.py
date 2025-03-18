@@ -50,8 +50,6 @@ class Planner(Node):
 
         self.marker_pub = self.create_publisher(MarkerArray, 'obstacles', 1)
 
-        self.srv = self.create_service(GetPlan, 'get_plan', self.get_plan)
-
         # also allow setGoal from RViz
         self.buffer = Buffer()
         self.listener = TransformListener(self.buffer, node = self)
@@ -73,6 +71,8 @@ class Planner(Node):
                 self.turbines.append(bt.Point(pose.position.x, pose.position.y))
         self.planner.init_graph()
         self.pub_markers()
+        # we cannot have this service before getting the turbines
+        self.srv = self.create_service(GetPlan, 'get_plan', self.plan_cb)
 
     def pub_markers(self):
 
