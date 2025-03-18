@@ -131,6 +131,8 @@ class Command(Node):
         self.cmd_t = 0.
         self.vel_sub = self.create_subscription(Odometry, 'odom', self.odom_cb, 1)
 
+        self.uni = self.declare_parameter('unicycle', True).value
+
         self.left = Thruster(self, 'left')
         self.right = Thruster(self, 'right')
 
@@ -167,40 +169,33 @@ class Command(Node):
         fyd = self.imc['y'].cmd()
         md = self.imc['w'].cmd()
 
-        tl = tr = 0.
-        fl = fxd/2 - md/1.2
-        fr = fxd/2 + md/1.2
-        scale = max(abs(fl/5000),abs(fr/5000))
-        if scale > 1.:
-            fl /= scale
-            fr /= scale
+        if self.uni:
 
-        def force(u):
+            tl = tr = 0.
+            fl = fxd/2 - md/1.2
+            fr = fxd/2 + md/1.2
+            scale = max(abs(fl/5000),abs(fr/5000))
+            if scale > 1.:
+                fl /= scale
+                fr /= scale
+        else:
 
-            x = -3
-            xt = -0.278156
-            y = 0.6
-            fl,fr,tl,tr = u
-            fx = fl*cos(tl) + fr*cos(tr)
-            fy = fl*sin(tl) + fr*sin(tr)
-            m = fl*(x*sin(tl) - y*cos(tl)) + fr*(x*sin(tr) + y*cos(tr))
+            def force(u):
 
-            return (fx-fxd)**2 + (fy-fyd)**2 + (m-md)**2 + 0.1*tl**2 + 0.1*tr**2
+                x = -3
+                y = 0.6
+                fl,fr,tl,tr = u
+                fx = fl*cos(tl) + fr*cos(tr)
+                fy = fl*sin(tl) + fr*sin(tr)
+                m = fl*(x*sin(tl) - y*cos(tl)) + fr*(x*sin(tr) + y*cos(tr))
 
-        fl,fr,tl,tr = minimize(force, [0,0,0,0], method='SLSQP',
-                 bounds = [(-5000,5000)]*2 + [(-pi/4,pi/4)]*2).x
+                return (fx-fxd)**2 + (fy-fyd)**2 + (m-md)**2 + 0.1*tl**2 + 0.1*tr**2
+
+            fl,fr,tl,tr = minimize(force, [0,0,0,0], method='SLSQP',
+                    bounds = [(-5000,5000)]*2 + [(-pi/4,pi/4)]*2).x
 
         self.left.pub(tl,fl)
         self.right.pub(tr,fr)
-
-        #fl = (fxd**2 - fxd*sqrt(fxd**2 + fyd**2) + fyd**2)*(-fxd*y - fyd*x + md)/(2*fxd*y*(fxd - sqrt(fxd**2 + fyd**2)))
-        #fr = -(fxd**2 - fxd*sqrt(fxd**2 + fyd**2) + fyd**2)*(fxd*y - fyd*x + md)/(2*fxd*y*(fxd - sqrt(fxd**2 + fyd**2)))
-        #t = -2*atan2((fxd - sqrt(fxd**2 + fyd**2)), fyd)
-
-        #self.left.pub(t, fl)
-        #self.right.pub(t, fr)
-
-        #print('  -> ', fl, fr, t)
 
     def cb_params(self, params):
 
