@@ -16,7 +16,7 @@ using std_msgs::msg::Float64;
 class GPS2Pose : public rclcpp::Node
 {
 public:
-  GPS2Pose() : Node("gps2pose"), boat{this, &enu}
+  GPS2Pose() : Node("gz2ros"), boat{this, &enu}
   {
     set_parameter(rclcpp::Parameter("use_sim_time", true));
 

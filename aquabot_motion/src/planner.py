@@ -118,13 +118,17 @@ class Planner(Node):
 
     def plan_cb(self, req: GetPlan.Request, res: GetPlan.Response):
 
+        self.get_logger().info(f'Got plan request ({req.start.pose.position.x,req.start.pose.position.y}) -> ({req.goal.pose.position.x,req.goal.pose.position.y})')
+
         # XY path
         plan = self.get_plan(req.start.pose.position.x, req.start.pose.position.y,
                                      req.goal.pose.position.x, req.goal.pose.position.y)
         if plan is None:
+            self.get_logger().warn('   could not get plan')
             return
 
         res.plan = plan
+        self.get_logger().info('    plan computed')
         return res
 
     def goal_cb(self, msg: PoseStamped):
