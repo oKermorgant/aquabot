@@ -10,4 +10,6 @@ def generate_launch_description():
             arguments = [sl.find('aquabot_motion', 'Twist.yaml')])
         sl.node('aquabot_motion', 'cmd.py')
 
+        sl.node('aquabot_motion', 'planner.py')
+
     return sl.launch_description()

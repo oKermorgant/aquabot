@@ -131,7 +131,7 @@ class Command(Node):
         self.cmd_t = 0.
         self.vel_sub = self.create_subscription(Odometry, 'odom', self.odom_cb, 1)
 
-        self.uni = self.declare_parameter('unicycle', True).value
+        self.uni = self.declare_parameter('unicycle', False).value
 
         self.left = Thruster(self, 'left')
         self.right = Thruster(self, 'right')
@@ -141,6 +141,7 @@ class Command(Node):
         self.Kv = self.declare_parameter('Kv', 0.2).value
         self.Kw = self.declare_parameter('Kw', 1.).value
         self.add_on_set_parameters_callback(self.cb_params)
+
         self.timer = self.create_timer(dt, self.cmd)
 
     def odom_cb(self, msg: Odometry):
