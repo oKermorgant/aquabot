@@ -639,10 +639,20 @@ void WindturbinesInspectionScoringPlugin::PreUpdate( const sim::UpdateInfo &_inf
     {
       // Windturbines AIS
       const auto &cur{currentData.windturbines[turbine_idx]};
+
+#if GZ_MATH_MAJOR_VERSION >= 9
+      auto cartVec{math::CoordinateVector3::Metric(-cur.Pos().X(), -cur.Pos().Y(), cur.Pos().Z())};
+      auto latlon = this->dataPtr->sc.SphericalFromLocalPosition(cartVec).value();
+      const math::Quaternion<double> orientation = cur.Rot();
+      math::Pose3d pose({latlon.Lat()->Degree(), latlon.Lon()->Degree(), latlon.Z().value()}, orientation);
+#else
       math::Vector3d cartVec(-cur.Pos().X(), -cur.Pos().Y(), cur.Pos().Z());
       math::Vector3d latlon = this->dataPtr->sc.SphericalFromLocalPosition(cartVec);
       const math::Quaternion<double> orientation = cur.Rot();
       math::Pose3d pose(latlon, orientation);
+#endif
+
+
 
       msgs::Pose windturbinesPoseMsg;
       msgs::Set(&windturbinesPoseMsg,pose);
