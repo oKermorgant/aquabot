@@ -11,6 +11,7 @@ from rclpy.parameter import Parameter
 
 from astar import Astar
 import bitangents as bt
+from numpy import cos, sin, arctan2
 
 radius = 10
 me = 'aquabot/base_link'
@@ -151,11 +152,23 @@ class Planner(Node):
         path = Path()
 
         path.poses = []
-        for p in path2D:
+        for i,p in enumerate(path2D):
             pose = PoseStamped()
             pose.header.frame_id = 'world'
             pose.pose.position.x = p.x
             pose.pose.position.y = p.y
+
+            if i not in (0, len(path2D)-1):
+                pn = path2D[i+1]
+                pp =  path2D[i-1]
+                theta = arctan2(pn.y-pp.y, pn.x - pp.x)
+                pose.pose.orientation.w = cos(theta/2)
+                pose.pose.orientation.z = sin(theta/2)
+            if i == 1:
+                path.poses[0].pose.orientation = pose.pose.orientation
+            elif i == len(path2D)-1:
+                pose.pose.orientation = path.poses[-1].pose.orientation
+
             path.poses.append(pose)
         path.header.stamp = self.get_clock().now().to_msg()
         path.header.frame_id = 'world'
