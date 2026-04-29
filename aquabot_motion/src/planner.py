@@ -164,12 +164,12 @@ class Planner(Node):
                 theta = arctan2(pn.y-pp.y, pn.x - pp.x)
                 pose.pose.orientation.w = cos(theta/2)
                 pose.pose.orientation.z = sin(theta/2)
-            if i == 1:
-                path.poses[0].pose.orientation = pose.pose.orientation
-            elif i == len(path2D)-1:
-                pose.pose.orientation = path.poses[-1].pose.orientation
 
             path.poses.append(pose)
+
+        for src,dst in ((1,0), (-1, -2)):
+            path.poses[dst].pose.orientation = path.poses[src.pose.orientation
+
         path.header.stamp = self.get_clock().now().to_msg()
         path.header.frame_id = 'world'
 
