@@ -30,7 +30,7 @@ class Planner(Node):
 
         self.path_pub = self.create_publisher(Path, 'plan', 1)
         self.planner = Astar()
-        obstacles = (
+        obstacles = (       # int means obstacle
             (120, -50, 35),  # aquabot_lighthouse_island
             (-152, -6, 55),  # aquabot_island_1
             (110, 135, 50),  # aquabot_island_2
@@ -44,7 +44,8 @@ class Planner(Node):
 
         for x,y,rad in obstacles:
             self.planner.add_obstacle(x,y,rad)
-        self.N = len(self.planner.no_go_zones)
+        self.n_obs = len(obstacles)
+        self.get_logger().info(f'got {self.n_obs} rocks')
 
         self.sub = self.create_subscription(PoseArray, 'turbines', self.add_turbines, 10)
         self.turbines = []
@@ -54,13 +55,17 @@ class Planner(Node):
         # also allow setGoal from RViz
         self.buffer = Buffer()
         self.listener = TransformListener(self.buffer, node = self)
-        self.goal_pub = self.create_subscription(PoseStamped, 'goal_pose', self.goal_cb, 1)
+
+
+    def n_turbines(self):
+        return len(self.planner.no_go_zones) - self.n_obs
 
     def add_turbines(self, msg: PoseArray):
 
-        if len(self.planner.no_go_zones) - self.N == len(msg.poses):
-            # no new turbines
+        if self.n_turbines() == len(msg.poses):
             return
+
+        self.get_logger().info(f'adding {len(msg.poses)} turbines')
 
         for pose in msg.poses:
             self.planner.add_obstacle(pose.position.x, pose.position.y, radius)
@@ -72,8 +77,10 @@ class Planner(Node):
                 self.turbines.append(bt.Point(pose.position.x, pose.position.y))
         self.planner.init_graph()
         self.pub_markers()
-        # we cannot have this service before getting the turbines
+
+        # we can now plan path
         self.srv = self.create_service(GetPlan, 'get_plan', self.plan_cb)
+        self.goal_pub = self.create_subscription(PoseStamped, 'goal_pose', self.goal_cb, 1)
 
     def pub_markers(self):
 
@@ -122,8 +129,8 @@ class Planner(Node):
         self.get_logger().info(f'Got plan request ({req.start.pose.position.x,req.start.pose.position.y}) -> ({req.goal.pose.position.x,req.goal.pose.position.y})')
 
         # XY path
-        plan = self.get_plan(req.start.pose.position.x, req.start.pose.position.y,
-                                     req.goal.pose.position.x, req.goal.pose.position.y)
+        plan = self.get_plan(req.start.pose.position,
+                             req.goal.pose)
         if plan is None:
             self.get_logger().warn('   could not get plan')
             return
@@ -133,17 +140,21 @@ class Planner(Node):
         return res
 
     def goal_cb(self, msg: PoseStamped):
+
+        if not self.n_turbines():
+            return
+
         now = rclpy.time.Time()
         if not self.buffer.can_transform('world', me, now):
             return
         start = self.buffer.lookup_transform('world', me, now).transform.translation
-        goal = msg.pose.position
-        self.get_plan(start.x, start.y, goal.x, goal.y)
+        self.get_plan(start, msg.pose)
 
-    def get_plan(self, x1, y1, x2, y2):
+    def get_plan(self, start, goal):
 
         # XY path
-        path2D = self.planner.set_task(x1, y1, x2, y2, discretize=True)
+        path2D = self.planner.set_task(start.x, start.y,
+                                       goal.position.x, goal.position.y, discretize=True)
 
         if path2D is None:
             return
@@ -167,8 +178,10 @@ class Planner(Node):
 
             path.poses.append(pose)
 
-        for src,dst in ((1,0), (-1, -2)):
-            path.poses[dst].pose.orientation = path.poses[src].pose.orientation
+
+        for idx,pose in ((0,path.poses[1].pose),
+                         (-1, goal)):
+            path.poses[idx].pose.orientation = pose.orientation
 
         path.header.stamp = self.get_clock().now().to_msg()
         path.header.frame_id = 'world'
