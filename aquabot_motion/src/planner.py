@@ -168,7 +168,7 @@ class Planner(Node):
             path.poses.append(pose)
 
         for src,dst in ((1,0), (-1, -2)):
-            path.poses[dst].pose.orientation = path.poses[src.pose.orientation
+            path.poses[dst].pose.orientation = path.poses[src].pose.orientation
 
         path.header.stamp = self.get_clock().now().to_msg()
         path.header.frame_id = 'world'
