@@ -24,9 +24,8 @@ def distance2(p1, p2):
 class Planner(Node):
 
     def __init__(self):
-        super().__init__('planner')
-        param = Parameter('use_sim_time', Parameter.Type.BOOL, True)
-        self.set_parameters([param])
+        super().__init__('planner',
+                         parameter_overrides=[Parameter('use_sim_time', value=True)])
 
         self.path_pub = self.create_publisher(Path, 'plan', 1)
         self.planner = Astar()

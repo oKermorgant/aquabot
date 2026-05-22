@@ -122,10 +122,8 @@ class Thruster:
 class Command(Node):
     def __init__(self):
 
-        super().__init__('control')
-        # force use_sim_time
-        param = Parameter('use_sim_time', Parameter.Type.BOOL, True)
-        self.set_parameters([param])
+        super().__init__('control',
+                         parameter_overrides=[Parameter('use_sim_time', value=True)])
 
         self.cmd_sub = self.create_subscription(Twist, 'cmd_vel', self.cmd_cb, 1)
         self.cmd_t = 0.
