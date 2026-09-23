@@ -203,7 +203,7 @@
     <dynamics damping="0.05" friction="0.05"/>
   </joint>
   <gazebo>
-    <plugin filename="ignition-gazebo-thruster-system" name="ignition::gazebo::systems::Thruster">
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
       <joint_name>aquabot/left_engine_propeller_joint</joint_name>
       <thrust_coefficient>0.004422</thrust_coefficient>
       <fluid_density>1000</fluid_density>
@@ -216,7 +216,7 @@
       <!-- Not used by Gazebo but used to run the bridge easily -->
       <name>left</name>
     </plugin>
-    <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>aquabot/left_chassis_engine_joint</joint_name>
       <use_velocity_commands>true</use_velocity_commands>
       <topic>aquabot/thrusters/left/pos</topic>
@@ -225,7 +225,7 @@
     </plugin>
   </gazebo>
   <gazebo>
-    <plugin filename="ignition-gazebo-thruster-system" name="ignition::gazebo::systems::Thruster">
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
       <joint_name>aquabot/right_engine_propeller_joint</joint_name>
       <thrust_coefficient>0.004422</thrust_coefficient>
       <fluid_density>1000</fluid_density>
@@ -238,7 +238,7 @@
       <!-- Not used by Gazebo but used to run the bridge easily -->
       <name>right</name>
     </plugin>
-    <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>aquabot/right_chassis_engine_joint</joint_name>
       <use_velocity_commands>true</use_velocity_commands>
       <topic>aquabot/thrusters/right/pos</topic>
@@ -247,7 +247,7 @@
     </plugin>
   </gazebo>
   <gazebo>
-    <plugin filename="ignition-gazebo-joint-position-controller-system" name="ignition::gazebo::systems::JointPositionController">
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
       <joint_name>aquabot/base_to_main_camera_post_joint</joint_name>
       <use_velocity_commands>true</use_velocity_commands>
       <topic>aquabot/thrusters/main_camera_sensor/pos</topic>
@@ -312,7 +312,7 @@
   </gazebo>
   <!-- === [Un]lock the robot to the world === -->
   <gazebo>
-    <plugin filename="ignition-gazebo-detachable-joint-system" name="ignition::gazebo::systems::DetachableJoint">
+    <plugin filename="gz-sim-detachable-joint-system" name="gz::sim::systems::DetachableJoint">
       <parent_link>aquabot/base_link</parent_link>
       <child_model>platform</child_model>
       <child_link>dummy_upper</child_link>
@@ -323,7 +323,7 @@
   <!-- === TF === -->
   <!-- Publish robot state information -->
   <gazebo>
-    <plugin filename="libignition-gazebo-pose-publisher-system.so" name="ignition::gazebo::systems::PosePublisher">
+    <plugin filename="gz-sim-pose-publisher-system" name="gz::sim::systems::PosePublisher">
       <publish_link_pose>false</publish_link_pose>
       <publish_sensor_pose>true</publish_sensor_pose>
       <publish_collision_pose>true</publish_collision_pose>
@@ -334,7 +334,7 @@
       <static_publisher>false</static_publisher>
       <static_update_frequency>1</static_update_frequency>
     </plugin>
-    <plugin filename="ignition-gazebo-joint-state-publisher-system" name="ignition::gazebo::systems::JointStatePublisher">
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
     </plugin>
   </gazebo>
   <!-- Monocular Camera -->
