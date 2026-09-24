@@ -3,6 +3,12 @@
   <model name="aquabot_windturbine_main">
     <static>true</static>
     <link name="link">
+    <sensor name="navsat" type="navsat">
+      <always_on>1</always_on>
+      <update_rate>1</update_rate>
+      <topic>/aquabot/ais_sensor/windturbines</topic>
+    </sensor>
+
       <!-- Wind turbine basement-->
       <visual name="base">
         <pose>0 0 0 0 0 0</pose>

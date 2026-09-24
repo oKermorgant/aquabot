@@ -24,9 +24,13 @@ def launch_setup():
     bridges.append(('/vrx/windturbinesinspection/windturbine_checkup',
                     '/vrx/windturbinesinspection/windturbine_checkup',
                     'std_msgs/msg/String', GazeboBridge.ros2gz))
-    bridges.append(('/aquabot/ais_sensor/windturbines_positions',
-                    '/aquabot/ais_sensor/windturbines_positions',
-                    'geometry_msgs/msg/Pose', GazeboBridge.gz2ros))
+    # bridges.append(('/aquabot/ais_sensor/windturbines_positions',
+    #                 '/aquabot/ais_sensor/windturbines_positions',
+    #                 'geometry_msgs/msg/Pose', GazeboBridge.gz2ros))
+    bridges.append(('/aquabot/ais_sensor/windturbines',
+                    '/aquabot/ais_sensor/windturbines',
+                    'sensor_msgs/NavSatFix', GazeboBridge.gz2ros))
+
     sl.create_gz_bridge(bridges)
 
     # spawn aquabot robot

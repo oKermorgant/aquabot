@@ -40,7 +40,7 @@ Several topics, for sensing and action, are available in the `/aquabot` namespac
 `sensors/cameras/main_camera_sensor/image_raw` | `sensor_msgs/Image` | simulated image
 `sensors/imu/imu/data` | `sensor_msgs/Imu` | Boat IMU
 `sensors/gps/gps/fix` | `sensor_msgs/NavSatFix` | Boat GPS
-`ais_sensor/windturbines_positions` | `geometry_msgs/Pose` | GPS (lat-long) coord of the turbines
+`ais_sensor/windturbines` | `sensor_msgs/NavSatFix` | GPS position of the turbines
 `sensors/acoustics/receiver/range`| `std_msgs/Float64` | Range to pinger
 `sensors/acoustics/receiver/bearing`| `std_msgs/Float64` | Bearing to pinger
 

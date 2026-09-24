@@ -633,7 +633,7 @@ void WindturbinesInspectionScoringPlugin::PreUpdate( const sim::UpdateInfo &_inf
   }
 
   static auto turbine_idx{0};
-  if( (currentData.time - this->dataPtr->lastTimePubAisWindturbines).count() > this->dataPtr->aisWindturbinesPeriod)
+  if constexpr(false && (currentData.time - this->dataPtr->lastTimePubAisWindturbines).count() > this->dataPtr->aisWindturbinesPeriod)
   {
     if(currentData.windturbines.size())
     {
@@ -656,7 +656,7 @@ void WindturbinesInspectionScoringPlugin::PreUpdate( const sim::UpdateInfo &_inf
 
       msgs::Pose windturbinesPoseMsg;
       msgs::Set(&windturbinesPoseMsg,pose);
-      this->dataPtr->aisWindturbinesPositionsPub.Publish(windturbinesPoseMsg);
+      //this->dataPtr->aisWindturbinesPositionsPub.Publish(windturbinesPoseMsg);
       this->dataPtr->lastTimePubAisWindturbines = currentData.time;
       turbine_idx = (turbine_idx + 1) % currentData.windturbines.size();
     }

@@ -24,19 +24,19 @@ public:
                      declare_parameter("longitude", -4.97632));
 
     static auto gps_sub = create_subscription<NavSatFix>("gps_fix", 5, [this](NavSatFix::UniquePtr msg)
-    {boat.updatePose(*msg);});
+                                                         {boat.updatePose(*msg);});
 
     static auto imu_sub = create_subscription<Imu>("imu_raw", 1, [this](Imu::UniquePtr msg)
-    {boat.updateImu(*msg);});
+                                                   {boat.updateImu(*msg);});
 
     obs_pub = create_publisher<PoseArray>("/aquabot/turbines", 1);
-    static auto obs_sub = create_subscription<Pose>("/aquabot/ais_sensor/windturbines_positions", 1, [this](Pose::UniquePtr msg)
-    {toPoses(*msg);});
+    static auto obs_sub = create_subscription<NavSatFix>("/aquabot/ais_sensor/windturbines", 1, [this](NavSatFix::UniquePtr msg)
+                                                         {toPoses(*msg);});
 
     static auto bearing_sub = create_subscription<Float64>("/aquabot/sensors/acoustics/receiver/bearing", 1, [this](Float64::UniquePtr msg)
-      {bearing = msg->data;});
+                                                           {bearing = msg->data;});
     static auto range_sub = create_subscription<Float64>("/aquabot/sensors/acoustics/receiver/range", 1, [this](Float64::UniquePtr msg)
-      {publishPinger(msg->data);});
+                                                         {publishPinger(msg->data);});
   }
 
 private:
@@ -60,18 +60,28 @@ private:
 
   rclcpp::Publisher<PoseArray>::SharedPtr obs_pub;
 
-  void toPoses(const Pose &msg)
+  void toPoses(const NavSatFix &msg)
   {
     static PoseArray poses;
-    static Pose meters;
+    static bool done{false};
+
+    if(poses.poses.size() == 3)
+    {
+      obs_pub->publish(poses);
+      // return;
+    }
+
     // convert to ENU
-    enu.transform(msg.position.x, msg.position.y, 1., meters.position);
+    Pose meters;
+    enu.transform(msg.latitude, msg.longitude, msg.altitude, meters.position);
+
+    std::cout << "Turbine @ " << msg.latitude << ", " << msg.longitude << " -> " <<
+        meters.position.x << ", " << meters.position.y  << std::endl;
+
+    //done =
 
     if(std::find(poses.poses.begin(), poses.poses.end(), meters) == poses.poses.end())
       poses.poses.push_back(meters);
-
-    if(poses.poses.size() == 3)
-      obs_pub->publish(poses);
   }
 };
 
