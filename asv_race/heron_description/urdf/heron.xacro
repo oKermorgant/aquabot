@@ -1,0 +1,420 @@
+<?xml version="1.0" ?>
+<robot name="heron" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:arg name="num" default="1"/>
+  <xacro:property name="num" value="$(arg num)"/>
+  <xacro:property name="name" value="heron$(arg num)"/>
+
+  <!-- Golden-angle hue stepping: neighboring ids get well-separated colors -->
+  <xacro:property name="hue" value="${(num * 137.508) % 360}"/>
+  <!-- c = s * (1 - |2*l - 1|) with s=0.85, l=0.5 -> c = 0.85 (abs() not
+  available in xacro expressions) -->
+  <xacro:property name="h_c" value="0.85"/>
+  <xacro:property name="h_t" value="${(hue / 60.0) % 2 - 1}"/>
+  <xacro:property name="h_ta" value="${h_t if h_t >= 0 else -h_t}"/>
+  <xacro:property name="h_x" value="${h_c * (1 - h_ta)}"/>
+  <xacro:property name="h_rgb"
+                  value="${[(h_c, h_x, 0), (h_x, h_c, 0), (0, h_c, h_x),
+                  (0, h_x, h_c), (h_x, 0, h_c), (h_c, 0, h_x)][int(hue / 60.0) % 6]}"/>
+  <xacro:property name="panel_rgba"
+                  value="${h_rgb[0] + 0.075} ${h_rgb[1] + 0.075} ${h_rgb[2] + 0.075} 1.0"/>
+
+  <!-- ============================================================= -->
+  <!-- Heron geometry (from Clearpath Heron description)              -->
+  <!-- Dynamics/plugins (Surface, SimpleHydrodynamics, Thruster)     -->
+  <!-- kept from the WAM-V model for a first version.                -->
+  <!-- ============================================================= -->
+
+  <xacro:property name="hull_length" value="1.35"/>
+  <xacro:property name="hull_width"  value="1.0"/>
+  <xacro:property name="hull_height" value="0.32"/>
+  <xacro:property name="hull_mass"   value="28.0"/>
+
+  <!-- ===================== Base link ===================== -->
+  <link name="${name}/base_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://heron_description/meshes/heron_base.stl" scale="1 1 1"/>
+      </geometry>
+      <material name="heron_dark_gray">
+        <color rgba="0.2 0.2 0.2 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://heron_description/meshes/heron_collision.stl" scale="1 1 1"/>
+      </geometry>
+    </collision>
+    <!-- Inertial computed as a catamaran: two hull cylinders
+    (m/2 = 14 kg, r = 0.15 m, l = 1.35 m) at y = +/-0.5 m,
+    CoG at z = -0.13 from the Heron description. -->
+    <inertial>
+      <mass value="${hull_mass}"/>
+      <origin rpy="0 0 0" xyz="0 0 -0.13"/>
+      <inertia ixx="7.315" ixy="0" ixz="0" iyy="4.41" iyz="0" izz="11.41"/>
+    </inertial>
+  </link>
+
+  <gazebo reference="${name}/base_link">
+    <selfCollide>false</selfCollide>
+    <material>Gazebo/DarkGrey</material>
+  </gazebo>
+
+  <!-- Side panels (visual only, from the Heron description) -->
+  <link name="${name}/left_panel_link">
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://heron_description/meshes/left_panel.stl"/>
+      </geometry>
+      <material name="${name}_panel_material">
+        <color rgba="${panel_rgba}"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="${name}/base_left_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0.0 0.34495 0.04959"/>
+    <parent link="${name}/base_link"/>
+    <child link="${name}/left_panel_link"/>
+  </joint>
+
+  <link name="${name}/right_panel_link">
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://heron_description/meshes/right_panel.stl"/>
+      </geometry>
+      <material name="${name}_panel_material">
+        <color rgba="${panel_rgba}"/>
+      </material>
+    </visual>
+  </link>
+  <joint name="${name}/base_right_joint" type="fixed">
+    <origin rpy="0 0 0" xyz="0.0 -0.34495 0.04959"/>
+    <parent link="${name}/base_link"/>
+    <child link="${name}/right_panel_link"/>
+  </joint>
+
+  <gazebo>
+    <enable_wind>true</enable_wind>
+  </gazebo>
+
+  <!-- ===================== Thrusters ===================== -->
+  <!-- Heron has fixed (non-steering) thrusters, differential only.
+  Propeller joints + gz Thruster plugins keep the WAM-V command
+  interface: ${name}/thrusters/{left,right}/thrust -->
+
+  <xacro:macro name="heron_thruster" params="side y">
+    <link name="${name}/${side}_propeller_link">
+      <visual>
+        <geometry>
+          <mesh filename="package://heron_description/meshes/prop.dae" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision name="${side}_propeller_collision">
+        <origin rpy="0 1.57 0" xyz="-0.08 0 0"/>
+        <geometry>
+          <cylinder length="0.18" radius="0.1"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.5"/>
+        <inertia ixx="0.008545" ixy="0" ixz="0" iyy="0.008545" iyz="0" izz="0.0144"/>
+      </inertial>
+    </link>
+
+    <!-- Fixed thruster mount (no steering pod) -->
+    <link name="${name}/${side}_engine_link">
+      <inertial>
+        <mass value="0.001"/>
+        <inertia ixx="0.000000017" ixy="0" ixz="0"
+                 iyy="0.000000017" iyz="0" izz="0.000000017"/>
+        </inertial>
+      </link>
+
+      <joint name="${name}/${side}_chassis_engine_joint" type="fixed">
+        <origin rpy="0 0 0" xyz="-0.53 ${y} -0.16"/>
+        <parent link="${name}/base_link"/>
+        <child link="${name}/${side}_engine_link"/>
+      </joint>
+
+      <joint name="${name}/${side}_engine_propeller_joint" type="continuous">
+        <axis rpy="0 0 0" xyz="1 0 0"/>
+        <parent link="${name}/${side}_engine_link"/>
+        <child link="${name}/${side}_propeller_link"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <limit effort="100" velocity="100"/>
+        <dynamics damping="0.05" friction="0.05"/>
+      </joint>
+
+      <gazebo>
+        <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
+          <joint_name>${name}/${side}_engine_propeller_joint</joint_name>
+          <!-- WAM-V coefficients kept for the first version -->
+          <thrust_coefficient>0.004422</thrust_coefficient>
+          <fluid_density>1000</fluid_density>
+          <propeller_diameter>0.2</propeller_diameter>
+          <velocity_control>true</velocity_control>
+          <min_thrust_cmd>-40</min_thrust_cmd>
+          <max_thrust_cmd>100</max_thrust_cmd>
+          <namespace>${name}</namespace>
+          <topic>thrusters/${side}/thrust</topic>
+          <name>${side}</name>
+        </plugin>
+      </gazebo>
+    </xacro:macro>
+
+    <xacro:heron_thruster side="left"  y="0.377654"/>
+    <xacro:heron_thruster side="right" y="-0.377654"/>
+
+    <!-- ===================== Sensors ===================== -->
+    <link name="${name}/gps_link">
+      <inertial>
+        <mass value="1"/>
+        <inertia ixx="0.006458" ixy="0" ixz="0" iyy="0.006458" iyz="0" izz="0.01125"/>
+      </inertial>
+    </link>
+    <joint name="${name}/gps_joint" type="fixed">
+      <origin rpy="0 0 0" xyz="0.0 0.0 0.4"/>
+      <parent link="${name}/base_link"/>
+      <child link="${name}/gps_link"/>
+    </joint>
+
+    <link name="${name}/imu_link">
+      <inertial>
+        <mass value="0.1"/>
+        <inertia ixx="0.00000542" ixy="0" ixz="0" iyy="0.00002104" iyz="0" izz="0.00002604"/>
+      </inertial>
+    </link>
+    <joint name="${name}/imu_joint" type="fixed">
+      <origin rpy="0 0 0" xyz="0.5 0.0 0.35"/>
+      <parent link="${name}/base_link"/>
+      <child link="${name}/imu_link"/>
+    </joint>
+
+    <link name="${name}/camera">
+      <inertial>
+        <mass value="0.3"/>
+        <inertia ixx="0.0000450" ixy="0" ixz="0" iyy="0.0001746" iyz="0" izz="0.0001746"/>
+      </inertial>
+    </link>
+    <joint name="${name}/camera_joint" type="fixed">
+      <origin rpy="0 0 0" xyz="0.8 0 0.4"/>
+      <parent link="${name}/base_link"/>
+      <child link="${name}/camera"/>
+    </joint>
+
+    <!-- ===================== Gazebo plugins ===================== -->
+    <gazebo>
+      <!-- Left hull -->
+      <plugin filename="libSurface.so" name="vrx::Surface">
+        <link_name>${name}/base_link</link_name>
+        <!-- Approximation of the Heron's box hull (1.35 x 1.0 x 0.32 m) -->
+        <hull_length>${hull_length}</hull_length>
+        <hull_radius>0.16</hull_radius>
+        <fluid_level>0</fluid_level>
+        <points>
+          <point>0.4 0.37 -0.2</point>
+          <point>-0.4 0.37 -0.2</point>
+        </points>
+        <wavefield>
+          <topic>/vrx/wavefield/parameters</topic>
+        </wavefield>
+      </plugin>
+
+      <!-- Right hull -->
+      <plugin filename="libSurface.so" name="vrx::Surface">
+        <link_name>${name}/base_link</link_name>
+        <hull_length>${hull_length}</hull_length>
+        <hull_radius>0.16</hull_radius>
+        <fluid_level>0</fluid_level>
+        <points>
+          <point>0.4 -0.37 -0.2</point>
+          <point>-0.4 -0.37 -0.2</point>
+        </points>
+        <wavefield>
+          <topic>/vrx/wavefield/parameters</topic>
+        </wavefield>
+      </plugin>
+
+      <!-- Hydrodynamic drag from the Heron's own UUV damping values
+      (Clearpath-measured, sign-flipped for the vrx plugin):
+      linear  -16.45 -15.80 -100 -13 -13 -6
+      quadratic -2.94 -2.76 -10 -5 -5 -5
+      (surge, sway, heave, roll, pitch, yaw) -->
+      <plugin filename="libSimpleHydrodynamics.so" name="vrx::SimpleHydrodynamics">
+        <link_name>${name}/base_link</link_name>
+        <!-- Added mass -->
+        <xDotU>0.0</xDotU>
+        <yDotV>0.0</yDotV>
+        <nDotR>0.0</nDotR>
+        <!-- Linear and quadratic drag -->
+        <xU>16.45</xU>
+        <xUU>2.94</xUU>
+        <yV>15.80</yV>
+        <yVV>2.76</yVV>
+        <zW>100.0</zW>
+        <kP>13.0</kP>
+        <kPP>5.0</kPP>
+        <mQ>13.0</mQ>
+        <mQQ>5.0</mQQ>
+        <nR>6.0</nR>
+        <nRR>5.0</nRR>
+      </plugin>
+
+      <plugin filename="libgz-sim-pose-publisher-system.so" name="gz::sim::systems::PosePublisher">
+        <publish_link_pose>false</publish_link_pose>
+        <publish_sensor_pose>true</publish_sensor_pose>
+        <publish_collision_pose>false</publish_collision_pose>
+        <publish_visual_pose>false</publish_visual_pose>
+        <publish_nested_model_pose>false</publish_nested_model_pose>
+        <publish_model_pose>false</publish_model_pose>
+        <use_pose_vector_msg>true</use_pose_vector_msg>
+        <static_publisher>false</static_publisher>
+        <static_update_frequency>1</static_update_frequency>
+      </plugin>
+
+      <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher"/>
+    </gazebo>
+
+    <gazebo reference="${name}/gps_link">
+      <sensor name="navsat" type="navsat">
+        <always_on>1</always_on>
+        <update_rate>10</update_rate>
+        <topic>${name}/navsat</topic>
+        <gps>
+          <position_sensing>
+            <horizontal>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>1.</stddev>
+              </noise>
+            </horizontal>
+            <vertical>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>1.</stddev>
+              </noise>
+            </vertical>
+          </position_sensing>
+        </gps>
+      </sensor>
+    </gazebo>
+
+    <gazebo reference="${name}/imu_link">
+      <sensor name="imu_sensor" type="imu">
+        <update_rate>100</update_rate>
+        <topic>${name}/imu</topic>
+        <imu>
+          <angular_velocity>
+            <x>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.009</stddev>
+                <bias_mean>0.00075</bias_mean>
+                <bias_stddev>0.005</bias_stddev>
+                <dynamic_bias_stddev>0.00002</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                <precision>0.00025</precision>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.009</stddev>
+                <bias_mean>0.00075</bias_mean>
+                <bias_stddev>0.005</bias_stddev>
+                <dynamic_bias_stddev>0.00002</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                <precision>0.00025</precision>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.009</stddev>
+                <bias_mean>0.00075</bias_mean>
+                <bias_stddev>0.005</bias_stddev>
+                <dynamic_bias_stddev>0.00002</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>400.0</dynamic_bias_correlation_time>
+                <precision>0.00025</precision>
+              </noise>
+            </z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.021</stddev>
+                <bias_mean>0.05</bias_mean>
+                <bias_stddev>0.0075</bias_stddev>
+                <dynamic_bias_stddev>0.000375</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                <precision>0.005</precision>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.021</stddev>
+                <bias_mean>0.05</bias_mean>
+                <bias_stddev>0.0075</bias_stddev>
+                <dynamic_bias_stddev>0.000375</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                <precision>0.005</precision>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.021</stddev>
+                <bias_mean>0.05</bias_mean>
+                <bias_stddev>0.0075</bias_stddev>
+                <dynamic_bias_stddev>0.000375</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>175.0</dynamic_bias_correlation_time>
+                <precision>0.005</precision>
+              </noise>
+            </z>
+          </linear_acceleration>
+          <orientation_reference_frame>
+            <localization>ENU</localization>
+          </orientation_reference_frame>
+        </imu>
+      </sensor>
+    </gazebo>
+
+    <gazebo reference="${name}/camera">
+      <sensor name="camera" type="camera">
+        <update_rate>10.0</update_rate>
+        <topic>${name}/camera</topic>
+        <camera name="camera">
+          <horizontal_fov>1.3962634</horizontal_fov>
+          <image>
+            <width>720</width>
+            <height>576</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>400</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+        </camera>
+      </sensor>
+    </gazebo>
+
+  </robot>

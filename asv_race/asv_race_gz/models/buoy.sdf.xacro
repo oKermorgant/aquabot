@@ -1,0 +1,159 @@
+<?xml version="1.0"?>
+<sdf xmlns:xacro="http://www.ros.org/wiki/xacro" version="1.8">
+
+  <!-- ============ User parameters ============ -->
+  <!-- Pick the name and color, e.g.
+       ros2 run xacro xacro buoy.xacro name:=my_buoy color:=blue
+  -->
+  <xacro:arg name="name"  default="buoy"/>
+  <xacro:arg name="color" default="red"/>
+
+  <xacro:property name="name"  value="$(arg name)"/>
+  <xacro:property name="color" value="$(arg color)"/>
+
+  <!-- Buoy geometry -->
+  <xacro:property name="hull_radius" value="0.25"/>
+  <xacro:property name="hull_length" value="0.7"/>
+  <xacro:property name="hull_mass"   value="50.0"/>
+
+  <!-- Color palette: RGBA (resolved via conditionals, xacro cannot index dicts).
+       Defaults are the grey fallback; a matching if overrides them. -->
+  <xacro:property name="rgba" value="0.5 0.5 0.5 1.0"/>
+  <xacro:property name="unknown_color" value="true"/>
+
+  <xacro:if value="${color == 'red'}">
+    <xacro:property name="rgba" value="1.0 0.0 0.0 1.0"/>
+    <xacro:property name="unknown_color" value="false"/>
+  </xacro:if>
+  <xacro:if value="${color == 'green'}">
+    <xacro:property name="rgba" value="0.0 1.0 0.0 1.0"/>
+    <xacro:property name="unknown_color" value="false"/>
+  </xacro:if>
+  <xacro:if value="${color == 'blue'}">
+    <xacro:property name="rgba" value="0.0 0.0 1.0 1.0"/>
+    <xacro:property name="unknown_color" value="false"/>
+  </xacro:if>
+  <xacro:if value="${color == 'yellow'}">
+    <xacro:property name="rgba" value="1.0 1.0 0.0 1.0"/>
+    <xacro:property name="unknown_color" value="false"/>
+  </xacro:if>
+  <xacro:if value="${color == 'orange'}">
+    <xacro:property name="rgba" value="1.0 0.5 0.0 1.0"/>
+    <xacro:property name="unknown_color" value="false"/>
+  </xacro:if>
+  <xacro:if value="${color == 'white'}">
+    <xacro:property name="rgba" value="1.0 1.0 1.0 1.0"/>
+    <xacro:property name="unknown_color" value="false"/>
+  </xacro:if>
+  <xacro:if value="${color == 'black'}">
+    <xacro:property name="rgba" value="0.1 0.1 0.1 1.0"/>
+    <xacro:property name="unknown_color" value="false"/>
+  </xacro:if>
+
+  <xacro:if value="${unknown_color}">
+    <xacro:log message="WARNING: unknown color '${color}', using grey."/>
+  </xacro:if>
+
+  <model name="${name}">
+
+    <!-- ============ Single floating link ============ -->
+    <link name="base_link">
+      <pose>0 0 0 0 0 0</pose>
+
+      <inertial>
+        <pose>0 0 -1. 0 0 0</pose>
+        <mass>${hull_mass}</mass>
+        <inertia>
+          <ixx>${0.0833333 * hull_mass * (3 * hull_radius*hull_radius + hull_length*hull_length)}</ixx>
+          <iyy>${0.0833333 * hull_mass * (3 * hull_radius*hull_radius + hull_length*hull_length)}</iyy>
+          <izz>${0.5 * hull_mass * hull_radius*hull_radius}</izz>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <visual name="visual">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>${hull_radius}</radius>
+            <length>${hull_length}</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>${rgba}</ambient>
+          <diffuse>${rgba}</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+
+      <collision name="collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>${hull_radius}</radius>
+            <length>${hull_length}</length>
+          </cylinder>
+        </geometry>
+      </collision>
+
+      <!-- ============ GPS sensor ============ -->
+      <sensor name="gps_sensor" type="gps">
+        <pose>0 0 0.2 0 0 0</pose>
+        <always_on>true</always_on>
+        <update_rate>10</update_rate>
+        <topic>${name}/gps</topic>
+        <gps>
+          <position_sensing>
+            <horizontal>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>2.</stddev>
+              </noise>
+            </horizontal>
+            <vertical>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>2.</stddev>
+              </noise>
+            </vertical>
+          </position_sensing>
+          <velocity_sensing>
+            <horizontal>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.25</stddev>
+              </noise>
+            </horizontal>
+            <vertical>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.25</stddev>
+              </noise>
+            </vertical>
+          </velocity_sensing>
+        </gps>
+      </sensor>
+    </link>
+
+    <!-- ============ Surface efforts plugin (wave buoyancy) ============ -->
+    <plugin filename="libSurface.so" name="vrx::Surface">
+      <link_name>base_link</link_name>
+      <hull_length>${hull_length}</hull_length>
+      <hull_radius>${hull_radius}</hull_radius>
+      <fluid_level>0</fluid_level>
+      <points>
+        <point>0. ${hull_radius} 0.5</point>
+        <point>0. ${-hull_radius} 0.5</point>
+        <point>${hull_radius} 0. 0.5</point>
+        <point>${-hull_radius} 0. 0.5</point>
+        </points>
+      <wavefield>
+        <topic>/vrx/wavefield/parameters</topic>
+      </wavefield>
+    </plugin>
+
+  </model>
+</sdf>
+

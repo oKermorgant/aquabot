@@ -1,0 +1,12 @@
+thrusters/left/thrust:
+    type: std_msgs/Float64
+    thrust:
+        min: -30.
+        max: 95.
+        default: 0.
+thrusters/right/thrust:
+    type: std_msgs/Float64
+    thrust:
+        min: -30.
+        max: 95.
+        default: 0.

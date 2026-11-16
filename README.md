@@ -86,3 +86,7 @@ This package contains two nodes to provide some tools for people not interested 
 - Control node (`cmd.py`): This node subscribes to `cmd_vel` (`geometry_msgs/Twist`) and `odom` (`nav_msgs/Odometry`). It uses a simple PID to control the thrusters of the boat in order to track the desired twist.
 
 - Planning node (`planner.py`): This node offers a `nav_msgs/GetPlan` service that find a path from two start and goal poses in the world frame. The path is returned through the service and is also published on the `plan` topic for visualization purpose. This node also subscribes to the `goal_pose` topic. In this case it will use the current pose of the boat as the start, the resulting path will be published on `plan`.
+
+### Race mode
+
+The same simulation environment is used to run a race with various WAM-V (VRX). It is designed to work on the network with each participant running inside its own ROS_DOMAIN_ID.

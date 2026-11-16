@@ -63,9 +63,11 @@ def launch_setup():
         bridges.append((f'/world/{world}/model/aquabot/link/aquabot/imu_link/sensor/imu_sensor/imu',
                         'sensors/imu/imu/data',
                         'sensor_msgs/Imu', GazeboBridge.gz2ros))
-        bridges.append((f'/world/{world}/model/aquabot/link/aquabot/main_camera_post_link/sensor/main_camera_sensor/image',
-                        'sensors/cameras/main_camera_sensor/image_raw',
-                        'sensor_msgs/Image', GazeboBridge.gz2ros))
+        bridges.append(GazeboBridge(f'/world/{world}/model/aquabot/link/aquabot/main_camera_post_link/sensor/main_camera_sensor/image',
+                                    'sensors/cameras/main_camera_sensor/image_raw',
+                                    'sensor_msgs/Image',
+                                    GazeboBridge.gz2ros,
+                                    frame_id='aquabot/main_camera_link_optical'))
         for info in ('range', 'bearing'):
             bridges.append((f'/aquabot/sensors/acoustics/receiver/{info}',
                             f'sensors/acoustics/receiver/{info}',
